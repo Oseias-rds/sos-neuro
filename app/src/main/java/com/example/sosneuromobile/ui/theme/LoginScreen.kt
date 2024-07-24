@@ -1,4 +1,4 @@
-package sosneuromobile.ui
+package com.example.sosneuromobile.ui.theme
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -6,21 +6,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.sosneuromobile.Footer
+import com.example.sosneuromobile.MainActivity
 import com.example.sosneuromobile.R
-import com.example.sosneuromobile.getMenuItems
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,8 +70,18 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
 
 @Composable
 fun LoginFields(onLoginSuccess: () -> Unit) {
-    val emailState = remember { mutableStateOf("") }
+    val cpfState = remember { mutableStateOf("") }
     val passwordState = remember { mutableStateOf("") }
+    val loginErrorState = remember { mutableStateOf<String?>(null) }
+
+
+    val context = LocalContext.current as MainActivity
+
+    fun authenticate(cpf: String, password: String) {
+        val url = "http://localhost/SosneuroMobile/buscar_usuario.php?cpf=$cpf&password=$password"
+        context.buscarUsuario(url)
+        onLoginSuccess()
+    }
 
     Column(
         modifier = Modifier
@@ -82,10 +90,10 @@ fun LoginFields(onLoginSuccess: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OutlinedTextField(
-            value = emailState.value,
-            onValueChange = { emailState.value = it },
-            label = { Text("Email") },
-            leadingIcon = { Icon(Icons.Filled.Email, contentDescription = "Email Icon") },
+            value = cpfState.value,
+            onValueChange = { cpfState.value = it },
+            label = { Text("cpf") },
+            leadingIcon = { Icon(Icons.Filled.CheckCircle, contentDescription = "cpf Icon") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -99,10 +107,20 @@ fun LoginFields(onLoginSuccess: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
-            onClick = { onLoginSuccess() },
+            onClick = {
+                authenticate(cpfState.value, passwordState.value)
+            },
             shape = MaterialTheme.shapes.medium
         ) {
             Text("Login")
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        loginErrorState.value?.let {
+            Text(
+                text = it,
+                color = Color.Red,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
@@ -110,5 +128,22 @@ fun LoginFields(onLoginSuccess: () -> Unit) {
             color = Color.Blue,
             modifier = Modifier.clickable { /* Handle forgot password */ }
         )
+    }
+}
+
+data class MenuItem(val title: String)
+
+fun getMenuItems(): List<MenuItem> {
+    return listOf()
+}
+
+@Composable
+fun Footer(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "© 2024 SOS NEURO. Todos os direitos reservados.")
+        Text(text = "Designed by MENCOL TECNOLOGIA")
     }
 }
