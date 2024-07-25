@@ -22,7 +22,7 @@ import com.example.sosneuromobile.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoginSuccess: () -> Unit) {
+fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -67,20 +67,30 @@ fun LoginScreen(onLoginSuccess: () -> Unit) {
         }
     )
 }
-
 @Composable
-fun LoginFields(onLoginSuccess: () -> Unit) {
-    val cpfState = remember { mutableStateOf("") }
+fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
+    val userLoginState = remember { mutableStateOf("") }
     val passwordState = remember { mutableStateOf("") }
     val loginErrorState = remember { mutableStateOf<String?>(null) }
 
-
     val context = LocalContext.current as MainActivity
 
-    fun authenticate(cpf: String, password: String) {
-        val url = "http://localhost/SosneuroMobile/buscar_usuario.php?cpf=$cpf&password=$password"
-        context.buscarUsuario(url)
-        onLoginSuccess()
+    fun authenticate(user_login: String, user_pass: String) {
+        // Verificar se o login ou a senha estão vazios
+        if (user_login.isBlank() || user_pass.isBlank()) {
+            loginErrorState.value = "Login e senha não podem estar vazios."
+            return
+        }
+
+        val url = "http://192.168.18.1:80/buscar_usuario.php?user_login=$user_login&user_pass=$user_pass"
+        context.buscarUsuario(url,
+            onSuccess = {
+                onLoginSuccess(user_login, user_pass)
+            },
+            onError = {
+                loginErrorState.value = it
+            }
+        )
     }
 
     Column(
@@ -90,10 +100,10 @@ fun LoginFields(onLoginSuccess: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         OutlinedTextField(
-            value = cpfState.value,
-            onValueChange = { cpfState.value = it },
-            label = { Text("cpf") },
-            leadingIcon = { Icon(Icons.Filled.CheckCircle, contentDescription = "cpf Icon") },
+            value = userLoginState.value,
+            onValueChange = { userLoginState.value = it },
+            label = { Text("Login") },
+            leadingIcon = { Icon(Icons.Filled.CheckCircle, contentDescription = "Login Icon") },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -108,7 +118,7 @@ fun LoginFields(onLoginSuccess: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                authenticate(cpfState.value, passwordState.value)
+                authenticate(userLoginState.value, passwordState.value)
             },
             shape = MaterialTheme.shapes.medium
         ) {
@@ -130,6 +140,7 @@ fun LoginFields(onLoginSuccess: () -> Unit) {
         )
     }
 }
+
 
 data class MenuItem(val title: String)
 

@@ -9,18 +9,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.android.volley.Request
-import com.android.volley.Response
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.JsonArrayRequest
+import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
-import com.example.sosneuromobile.ui.WelcomeScreen
 import com.example.sosneuromobile.ui.theme.SosNeuroMobileTheme
 import com.example.sosneuromobile.ui.theme.LoginScreen
+import com.example.sosneuromobile.ui.theme.UserDataScreen
 import org.json.JSONArray
-import org.json.JSONException
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -30,40 +30,48 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun buscarUsuario(URL: String) {
+    fun buscarUsuario(URL: String, onSuccess: (JSONArray) -> Unit, onError: (String) -> Unit) {
         val jsonArrayRequest = JsonArrayRequest(
             Request.Method.GET, URL, null,
             { response ->
-                var jsonObject: JSONObject?
-                for (i in 0 until response.length()) {
-                    try {
-                        jsonObject = response.getJSONObject(i)
-                        val userName = jsonObject.getString("name") // Substitua "name" pelo campo correto do JSON
-                        Toast.makeText(applicationContext, "User: $userName", Toast.LENGTH_SHORT).show()
-                    } catch (e: JSONException) {
-                        Toast.makeText(applicationContext, e.message, Toast.LENGTH_SHORT).show()
-                    }
+                if (response.length() > 0) {
+                    onSuccess(response) // Passa o JSONArray para onSuccess
+                } else {
+                    onError("User login ou senha incorretos")
                 }
             },
             { error: VolleyError ->
-                Toast.makeText(applicationContext, "ERROR DE CONEXÃO: $error", Toast.LENGTH_SHORT).show()
+                onError("ERROR DE CONEXÃO: ${error.message}")
             }
         )
         val requestQueue = Volley.newRequestQueue(this)
         requestQueue.add(jsonArrayRequest)
     }
 
+
     @Composable
     fun AppNavigation() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
-                LoginScreen(onLoginSuccess = {
-                    navController.navigate("welcome")
+                LoginScreen(onLoginSuccess = { user_login, user_pass ->
+                    val url =
+                        "http://192.168.18.1:80/buscar_usuario.php?user_login=$user_login&user_pass=$user_pass"
+                    buscarUsuario(url,
+                        onSuccess = { jsonObject ->
+                            val userData = jsonObject.toString()
+                            navController.navigate("user_data?userData=$userData")
+                        },
+                        onError = {
+                            Toast.makeText(applicationContext, it, Toast.LENGTH_SHORT).show()
+                        })
                 })
             }
-            composable("welcome") {
-                WelcomeScreen()
+            composable("user_data?userData={userData}") { backStackEntry ->
+                val userData = backStackEntry.arguments?.getString("userData")
+                userData?.let {
+                    UserDataScreen(userData = it)
+                }
             }
         }
     }
