@@ -62,11 +62,14 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
                         )
                     }
                 }
+                // Utilize a função Footer
                 Footer(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     )
 }
+
+
 @Composable
 fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
     val userLoginState = remember { mutableStateOf("") }
@@ -76,21 +79,14 @@ fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
     val context = LocalContext.current as MainActivity
 
     fun authenticate(user_login: String, user_pass: String) {
-        // Verificar se o login ou a senha estão vazios
-        if (user_login.isBlank() || user_pass.isBlank()) {
-            loginErrorState.value = "Login e senha não podem estar vazios."
-            return
-        }
-
-        val url = "http://192.168.18.1:80/buscar_usuario.php?user_login=$user_login&user_pass=$user_pass"
+        val url = "http://192.168.18.1/buscar_usuario.php?user_login=$user_login&user_pass=$user_pass"
         context.buscarUsuario(url,
-            onSuccess = {
+            onSuccess = { jsonResponse ->
                 onLoginSuccess(user_login, user_pass)
             },
             onError = {
                 loginErrorState.value = it
-            }
-        )
+            })
     }
 
     Column(
@@ -141,20 +137,8 @@ fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
     }
 }
 
-
 data class MenuItem(val title: String)
 
 fun getMenuItems(): List<MenuItem> {
     return listOf()
-}
-
-@Composable
-fun Footer(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "© 2024 SOS NEURO. Todos os direitos reservados.")
-        Text(text = "Designed by MENCOL TECNOLOGIA")
-    }
 }

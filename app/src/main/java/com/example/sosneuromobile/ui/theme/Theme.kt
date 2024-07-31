@@ -1,6 +1,5 @@
 package com.example.sosneuromobile.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -10,6 +9,13 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -35,7 +41,6 @@ fun SosNeuroMobileTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
@@ -45,4 +50,17 @@ fun SosNeuroMobileTheme(
         typography = Typography,
         content = content
     )
+}
+
+@Composable
+fun Footer(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .background(Color.Blue)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "© 2024 SOS NEURO. Todos os direitos reservados.", color = Color.White)
+        Text(text = "Designed by MENCOL TECNOLOGIA", color = Color.White)
+    }
 }
