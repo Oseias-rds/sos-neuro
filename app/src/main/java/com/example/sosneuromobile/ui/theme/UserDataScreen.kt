@@ -4,18 +4,23 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.widget.Toast
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import org.json.JSONObject
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -30,19 +35,22 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
     val telefone = json.optString("telefone", "N/A")
     val exams = json.optJSONArray("exames")
 
-    var isLoading by remember { mutableStateOf(true) }
-
-    // Simulando o carregamento de tipos de exames
-    LaunchedEffect(Unit) {
-        isLoading = false
+    val latestExam = remember {
+        exams?.let {
+            if (it.length() > 0) {
+                it.getJSONObject(0)
+            } else {
+                null
+            }
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "SOS Neuro") },
+                title = { Text(text = "SOS Neuro", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Blue,
+                    containerColor = Color(0xFF1565C0), // Azul
                     titleContentColor = Color.White
                 ),
                 actions = {
@@ -57,89 +65,136 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState())
+                    .background(Color(0xFFE3F2FD)), // Plano de fundo azul claro
+                horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
                     text = "Olá, ${displayName.uppercase()}",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Blue
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = Color(0xFF1565C0) // Azul
+                    )
                 )
-                Text(text = "Bem-vindo a sua área restrita")
+                Text(
+                    text = "Bem-vindo a sua área restrita",
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontSize = 18.sp,
+                        color = Color.DarkGray
+                    )
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "Seus dados pessoais:",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Blue
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF1565C0) // Azul
+                    )
                 )
 
-                Text(
-                    text = displayName.uppercase(),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = dataNasc,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = email,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    text = telefone,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = displayName.uppercase(),
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                    )
+                    Text(
+                        text = "Data de Nascimento: $dataNasc",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                    )
+                    Text(
+                        text = "Email: $email",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                    )
+                    Text(
+                        text = "Telefone: $telefone",
+                        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                    )
+                }
 
                 TextButton(onClick = { /* Editar informações */ }) {
-                    Text(text = "Editar informações", color = Color.Blue)
+                    Text(text = "Editar informações", color = Color(0xFF1565C0), fontSize = 18.sp)
                 }
 
                 Text(
-                    text = "Seus resultados:",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Blue
+                    text = "Seu resultado mais recente:",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF1565C0) // Azul
+                    )
                 )
 
-                if (isLoading) {
-                    CircularProgressIndicator()
-                } else {
-                    exams?.let {
-                        LazyColumn {
-                            items(it.length()) { index ->
-                                val exam = it.getJSONObject(index)
-                                val dataRealizacao = exam.optString("data_realizacao", "N/A")
-                                val urlExame = exam.optString("url_exame", null)
+                latestExam?.let {
+                    val dataRealizacao = it.optString("data_realizacao", "N/A")
+                    val urlExame = it.optString("url_exame", null)
 
-                                Column(modifier = Modifier.padding(8.dp)) {
-                                    Text(text = "Data Realização: $dataRealizacao")
-                                    urlExame?.let {
-                                        Text(
-                                            text = "Clique aqui para visualizar o exame.",
-                                            modifier = Modifier.clickable {
-                                                openPdfInBrowser(context, it)
-                                            },
-                                            color = Color.Blue
-                                        )
-                                    }
-                                    Divider(color = Color.Gray, thickness = 1.dp)
-                                }
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .background(Color(0xFFBBDEFB), shape = MaterialTheme.shapes.medium) // Fundo azul claro
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Data de Realização: $dataRealizacao",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { viewFile(context, urlExame) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Visibility,
+                                    contentDescription = "Visualizar Exame",
+                                    tint = Color(0xFF1565C0) // Azul
+                                )
+                            }
+                            IconButton(
+                                onClick = { downloadFile(context, urlExame) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Download,
+                                    contentDescription = "Baixar Exame",
+                                    tint = Color(0xFF1565C0) // Azul
+                                )
                             }
                         }
-                    } ?: run {
-                        Text(text = "Nenhum exame encontrado", color = Color.Gray)
                     }
+                } ?: run {
+                    Text(text = "Nenhum exame encontrado", color = Color.Gray)
                 }
             }
         }
     )
 }
 
-fun openPdfInBrowser(context: Context, url: String) {
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(Uri.parse(url), "application/pdf")
-        flags = Intent.FLAG_ACTIVITY_NO_HISTORY
+fun viewFile(context: Context, url: String?) {
+    url?.let {
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it)).apply {
+            setDataAndType(Uri.parse(it), "application/pdf")
+            flags = Intent.FLAG_ACTIVITY_NO_HISTORY
+        }
+        context.startActivity(browserIntent)
     }
-    context.startActivity(Intent.createChooser(intent, "Open PDF"))
+}
+
+fun downloadFile(context: Context, url: String?) {
+    url?.let {
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it))
+        context.startActivity(browserIntent)
+    }
 }
