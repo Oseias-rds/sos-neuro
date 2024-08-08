@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
                 LoginScreen(onLoginSuccess = { user_login, user_pass ->
-                    val url = "http://192.168.18.1/buscar_usuario.php?user_login=$user_login&user_pass=$user_pass"
+                    val url = "https://sosneuro.com.br/index.php/entrega-de-exames?user_login=$user_login&user_pass=$user_pass"
                     buscarUsuario(url,
                         onSuccess = { jsonObject ->
                             val userData = jsonObject.toString()

@@ -79,7 +79,7 @@ fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
     val context = LocalContext.current as MainActivity
 
     fun authenticate(user_login: String, user_pass: String) {
-        val url = "http://192.168.18.1/buscar_usuario.php?user_login=$user_login&user_pass=$user_pass"
+        val url = "https://sosneuro.com.br/index.php/entrega-de-exames?user_login=$user_login&user_pass=$user_pass"
         context.buscarUsuario(url,
             onSuccess = { jsonResponse ->
                 onLoginSuccess(user_login, user_pass)

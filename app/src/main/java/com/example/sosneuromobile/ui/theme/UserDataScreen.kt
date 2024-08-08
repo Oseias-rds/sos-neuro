@@ -1,9 +1,13 @@
 package com.example.sosneuromobile.ui.theme
 
+import android.app.DownloadManager
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -29,20 +33,14 @@ import org.json.JSONObject
 fun UserDataScreen(userData: String, onLogout: () -> Unit) {
     val context = LocalContext.current
     val json = remember { JSONObject(userData) }
-    val displayName = json.optString("display_name", "Usuário")
-    val dataNasc = json.optString("data_nasc", "N/A")
-    val email = json.optString("user_email", "N/A")
-    val telefone = json.optString("telefone", "N/A")
-    val exams = json.optJSONArray("exames")
+    val displayName by remember { mutableStateOf(json.optString("display_name", "Usuário")) }
+    val dataNasc by remember { mutableStateOf(json.optString("data_nasc", "N/A")) }
+    val email by remember { mutableStateOf(json.optString("user_email", "N/A")) }
+    val telefone by remember { mutableStateOf(json.optString("telefone", "N/A")) }
+    val exams by remember { mutableStateOf(json.optJSONArray("exames")) }
 
     val latestExam = remember {
-        exams?.let {
-            if (it.length() > 0) {
-                it.getJSONObject(0)
-            } else {
-                null
-            }
-        }
+        exams?.takeIf { it.length() > 0 }?.getJSONObject(0)
     }
 
     Scaffold(
@@ -50,7 +48,7 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
             TopAppBar(
                 title = { Text(text = "SOS Neuro", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1565C0), // Azul
+                    containerColor = Color(0xFF1565C0),
                     titleContentColor = Color.White
                 ),
                 actions = {
@@ -67,7 +65,7 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                     .padding(padding)
                     .padding(16.dp)
                     .verticalScroll(rememberScrollState())
-                    .background(Color(0xFFE3F2FD)), // Plano de fundo azul claro
+                    .background(Color(0xFFE3F2FD)),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -76,7 +74,7 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
-                        color = Color(0xFF1565C0) // Azul
+                        color = Color(0xFF1565C0)
                     )
                 )
                 Text(
@@ -94,7 +92,7 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
-                        color = Color(0xFF1565C0) // Azul
+                        color = Color(0xFF1565C0)
                     )
                 )
 
@@ -129,19 +127,19 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
-                        color = Color(0xFF1565C0) // Azul
+                        color = Color(0xFF1565C0)
                     )
                 )
 
                 latestExam?.let {
                     val dataRealizacao = it.optString("data_realizacao", "N/A")
-                    val urlExame = it.optString("url_exame", null)
+                    val urlExame = it.optString("url_exame", "N/A")
 
                     Column(
                         modifier = Modifier
                             .padding(16.dp)
                             .fillMaxWidth()
-                            .background(Color(0xFFBBDEFB), shape = MaterialTheme.shapes.medium) // Fundo azul claro
+                            .background(Color(0xFFBBDEFB), shape = MaterialTheme.shapes.medium)
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -154,22 +152,18 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(
-                                onClick = { viewFile(context, urlExame) }
-                            ) {
+                            IconButton(onClick = { viewFile(context, urlExame) }) {
                                 Icon(
                                     imageVector = Icons.Default.Visibility,
                                     contentDescription = "Visualizar Exame",
-                                    tint = Color(0xFF1565C0) // Azul
+                                    tint = Color(0xFF1565C0)
                                 )
                             }
-                            IconButton(
-                                onClick = { downloadFile(context, urlExame) }
-                            ) {
+                            IconButton(onClick = { downloadFile(context, urlExame) }) {
                                 Icon(
                                     imageVector = Icons.Default.Download,
                                     contentDescription = "Baixar Exame",
-                                    tint = Color(0xFF1565C0) // Azul
+                                    tint = Color(0xFF1565C0)
                                 )
                             }
                         }
@@ -182,13 +176,17 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
     )
 }
 
-fun viewFile(context: Context, url: String?) {
-    url?.let {
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(it)).apply {
-            setDataAndType(Uri.parse(it), "application/pdf")
-            flags = Intent.FLAG_ACTIVITY_NO_HISTORY
+fun viewFile(context: Context, url: String) {
+    if (url.isNotEmpty()) {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "Nenhum aplicativo para abrir este link encontrado", Toast.LENGTH_SHORT).show()
         }
-        context.startActivity(browserIntent)
     }
 }
 
