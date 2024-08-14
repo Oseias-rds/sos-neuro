@@ -26,13 +26,9 @@ import com.example.sosneuromobile.ui.theme.SosNeuroMobileTheme
 import com.example.sosneuromobile.ui.theme.LoginScreen
 import com.example.sosneuromobile.ui.theme.ResultadoExame
 import com.example.sosneuromobile.ui.theme.UserDataScreen
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
-
 class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -44,23 +40,20 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     fun buscarUsuario(
         URL: String,
-        onSuccess: (Boolean) -> Unit,
+        onSuccess: (Boolean, String) -> Unit, // Adicionado parâmetro para dados do usuário
         onError: (String) -> Unit
     ) {
         val stringRequest = StringRequest(
             Request.Method.GET, URL,
             { response ->
                 try {
-                    // Usar Jsoup para analisar a resposta HTML
                     val document: Document = Jsoup.parse(response)
-
-                    // Verificar se a resposta contém a indicação de usuário válido
                     val usuarioValido = document.select(".header-info .texto").isNotEmpty()
-
-                    // Se o usuário for válido, chama onSuccess com true, senão com false
-                    onSuccess(usuarioValido)
+                    val userData = document.select(".header-info .texto").text() // Substitua com o seletor correto
+                    onSuccess(usuarioValido, userData)
                 } catch (e: Exception) {
                     onError("Erro ao processar a resposta HTML: ${e.message}\nResposta HTML: $response")
                 }
@@ -75,7 +68,6 @@ class MainActivity : ComponentActivity() {
         val requestQueue = Volley.newRequestQueue(this)
         requestQueue.add(stringRequest)
     }
-
 
     fun buscarResultados(
         URL: String,
@@ -116,7 +108,6 @@ class MainActivity : ComponentActivity() {
         requestQueue.add(stringRequest)
     }
 
-
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
@@ -127,13 +118,11 @@ class MainActivity : ComponentActivity() {
                     val url = "https://sosneuro.com.br/index.php/entrega-de-exames?user_login=$user_login&user_pass=$user_pass"
 
                     buscarUsuario(url,
-                        onSuccess = { usuarioValido ->
+                        onSuccess = { usuarioValido, userData ->
                             if (usuarioValido) {
                                 val resultadoUrl = "https://sosneuro.com.br/index.php/entrega-de-exames"
                                 buscarResultados(resultadoUrl,
-                                    onSuccess = { resultados ->
-                                        // Navegar para a tela de dados do usuário com os resultados
-                                        val userData = "Dados do usuário" // Substitua com dados reais, se necessário
+                                    onSuccess = {
                                         navController.navigate("user_data?userData=$userData")
                                     },
                                     onError = { error ->

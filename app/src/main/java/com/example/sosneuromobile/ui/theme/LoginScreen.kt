@@ -79,8 +79,12 @@ fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
     fun authenticate(user_login: String, user_pass: String) {
         val url = "https://sosneuro.com.br/index.php/entrega-de-exames?user_login=$user_login&user_pass=$user_pass"
         context.buscarUsuario(url,
-            onSuccess = { jsonResponse ->
-                onLoginSuccess(user_login, user_pass)
+            onSuccess = { usuarioValido, userData ->
+                if (usuarioValido) {
+                    onLoginSuccess(user_login, user_pass)
+                } else {
+                    loginErrorState.value = "Usuário inválido"
+                }
             },
             onError = {
                 loginErrorState.value = it
