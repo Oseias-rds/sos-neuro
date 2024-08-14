@@ -62,13 +62,11 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
                         )
                     }
                 }
-                // Utilize a função Footer
                 Footer(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
         }
     )
 }
-
 
 @Composable
 fun LoginFields(onLoginSuccess: (String, String) -> Unit) {

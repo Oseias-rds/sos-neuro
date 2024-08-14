@@ -9,6 +9,8 @@ converterGson = "2.9.0"
 coreKtxVersion = "1.13.1"
 espressoCoreVersion = "3.6.1"
 firebaseFirestoreKtxVersion = "24.7.1"
+htmlparser = "2.1"
+jsoup = "1.15.2"
 kotlin = "1.9.0"
 coreKtx = "1.10.1"
 junit = "4.13.2"
@@ -50,6 +52,8 @@ androidx-navigation-compose-v253 = { module = "androidx.navigation:navigation-co
 androidx-navigation-compose-v260 = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigationCompose" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "converterGson" }
 firebase-firestore-ktx-v2471 = { module = "com.google.firebase:firebase-firestore-ktx", version.ref = "firebaseFirestoreKtxVersion" }
+htmlparser = { module = "org.htmlparser:htmlparser", version.ref = "htmlparser" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

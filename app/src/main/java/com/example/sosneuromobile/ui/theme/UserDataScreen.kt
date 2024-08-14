@@ -1,12 +1,10 @@
 package com.example.sosneuromobile.ui.theme
 
-import android.app.DownloadManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -25,22 +23,31 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import org.json.JSONException
 import org.json.JSONObject
-
+@Composable
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun UserDataScreen(userData: String, onLogout: () -> Unit) {
+fun UserDataScreen(userData: String, resultados: List<ResultadoExame>, onLogout: () -> Unit) {
     val context = LocalContext.current
-    val json = remember { JSONObject(userData) }
-    val displayName by remember { mutableStateOf(json.optString("display_name", "Usuário")) }
-    val dataNasc by remember { mutableStateOf(json.optString("data_nasc", "N/A")) }
-    val email by remember { mutableStateOf(json.optString("user_email", "N/A")) }
-    val telefone by remember { mutableStateOf(json.optString("telefone", "N/A")) }
-    val exams by remember { mutableStateOf(json.optJSONArray("exames")) }
 
-    val latestExam = remember {
-        exams?.takeIf { it.length() > 0 }?.getJSONObject(0)
+    // Inicialmente definimos valores padrão
+    var displayName by remember { mutableStateOf("Usuário") }
+    var dataNasc by remember { mutableStateOf("N/A") }
+    var email by remember { mutableStateOf("N/A") }
+    var telefone by remember { mutableStateOf("N/A") }
+
+    // Tenta converter userData para JSON
+    LaunchedEffect(userData) {
+        try {
+            val json = JSONObject(userData)
+            displayName = json.optString("display_name", "Usuário")
+            dataNasc = json.optString("data_nasc", "N/A")
+            email = json.optString("user_email", "N/A")
+            telefone = json.optString("telefone", "N/A")
+        } catch (e: JSONException) {
+            Toast.makeText(context, "Erro ao processar dados do usuário: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 
     Scaffold(
@@ -123,7 +130,7 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                 }
 
                 Text(
-                    text = "Seu resultado mais recente:",
+                    text = "Seus resultados de exames:",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
@@ -131,10 +138,7 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                     )
                 )
 
-                latestExam?.let {
-                    val dataRealizacao = it.optString("data_realizacao", "N/A")
-                    val urlExame = it.optString("url_exame", "N/A")
-
+                resultados.forEach { resultado ->
                     Column(
                         modifier = Modifier
                             .padding(16.dp)
@@ -144,7 +148,11 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Data de Realização: $dataRealizacao",
+                            text = "Data de Realização: ${resultado.dataRealizacao}",
+                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
+                        )
+                        Text(
+                            text = "Tipo de Exame: ${resultado.tipoExame}",
                             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -152,14 +160,14 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = { viewFile(context, urlExame) }) {
+                            IconButton(onClick = { viewFile(context, resultado.linkBaixar) }) {
                                 Icon(
                                     imageVector = Icons.Default.Visibility,
                                     contentDescription = "Visualizar Exame",
                                     tint = Color(0xFF1565C0)
                                 )
                             }
-                            IconButton(onClick = { downloadFile(context, urlExame) }) {
+                            IconButton(onClick = { downloadFile(context, resultado.linkBaixar) }) {
                                 Icon(
                                     imageVector = Icons.Default.Download,
                                     contentDescription = "Baixar Exame",
@@ -168,7 +176,9 @@ fun UserDataScreen(userData: String, onLogout: () -> Unit) {
                             }
                         }
                     }
-                } ?: run {
+                }
+
+                if (resultados.isEmpty()) {
                     Text(text = "Nenhum exame encontrado", color = Color.Gray)
                 }
             }
@@ -196,3 +206,5 @@ fun downloadFile(context: Context, url: String?) {
         context.startActivity(browserIntent)
     }
 }
+
+
