@@ -1,5 +1,6 @@
 package com.example.sosneuromobile.ui.theme
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,8 +18,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.StringRequest
+import com.android.volley.toolbox.Volley
 import com.example.sosneuromobile.MainActivity
 import com.example.sosneuromobile.R
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,22 +81,42 @@ fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
     val passwordState = remember { mutableStateOf("") }
     val loginErrorState = remember { mutableStateOf<String?>(null) }
 
-    val context = LocalContext.current as MainActivity
+    val context = LocalContext.current
+
 
     fun authenticate(user_login: String, user_pass: String) {
-        val url = "https://sosneuro.com.br/index.php/entrega-de-exames?user_login=$user_login&user_pass=$user_pass"
-        context.buscarUsuario(url,
-            onSuccess = { usuarioValido, userData ->
-                if (usuarioValido) {
-                    onLoginSuccess(user_login, user_pass)
-                } else {
-                    loginErrorState.value = "Usuário inválido"
+        val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
+
+        if (context is MainActivity) {
+            context.getWpnonce(
+                context = context,
+                url = url,
+                onSuccess = { wpnonce ->
+                    context.buscarUsuario(
+                        context = context,
+                        url = url,
+                        login = user_login,
+                        senha = user_pass,
+                        loginPaciente = wpnonce,
+                        onSuccess = { usuarioValido, userData ->
+                            if (usuarioValido) {
+                                onLoginSuccess(user_login, userData.toString())
+                            } else {
+                                loginErrorState.value = "Usuário inválido"
+                            }
+                        },
+                        onError = { error ->
+                            loginErrorState.value = error
+                        }
+                    )
+                },
+                onError = { error ->
+                    loginErrorState.value = "Erro ao obter nonce: $error"
                 }
-            },
-            onError = {
-                loginErrorState.value = it
-            })
+            )
+        }
     }
+
 
     Column(
         modifier = Modifier

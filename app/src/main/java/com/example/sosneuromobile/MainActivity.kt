@@ -1,34 +1,31 @@
 package com.example.sosneuromobile
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.android.volley.Request
-import com.android.volley.VolleyError
-import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.sosneuromobile.ui.theme.SosNeuroMobileTheme
 import com.example.sosneuromobile.ui.theme.LoginScreen
 import com.example.sosneuromobile.ui.theme.ResultadoExame
+import com.example.sosneuromobile.ui.theme.UserData
 import com.example.sosneuromobile.ui.theme.UserDataScreen
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
+
 class MainActivity : ComponentActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -40,42 +37,118 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-    fun buscarUsuario(
-        URL: String,
-        onSuccess: (Boolean, String) -> Unit, // Adicionado parâmetro para dados do usuário
+    fun getWpnonce(
+        context: Context,
+        url: String,
+        onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
+        val queue = Volley.newRequestQueue(context)
+
         val stringRequest = StringRequest(
-            Request.Method.GET, URL,
+            Request.Method.GET, url,
             { response ->
-                try {
-                    val document: Document = Jsoup.parse(response)
-                    val usuarioValido = document.select(".header-info .texto").isNotEmpty()
-                    val userData = document.select(".header-info .texto").text() // Substitua com o seletor correto
-                    onSuccess(usuarioValido, userData)
-                } catch (e: Exception) {
-                    onError("Erro ao processar a resposta HTML: ${e.message}\nResposta HTML: $response")
+                val doc: Document = Jsoup.parse(response)
+                val nonceElement = doc.selectFirst("input[name=_wpnonce]")
+
+                if (nonceElement != null) {
+                    val wpnonce = nonceElement.attr("value")
+                    onSuccess(wpnonce)
+                } else {
+                    onError("Nonce não encontrado na página.")
                 }
             },
-            { error: VolleyError ->
-                val errorResponse = error.networkResponse?.data?.let {
-                    String(it, Charsets.UTF_8)
-                } ?: "Resposta do servidor não disponível"
-                onError("ERROR DE CONEXÃO: ${error.message}\nResposta do servidor: $errorResponse")
+            { error ->
+                onError("Erro na conexão: ${error.localizedMessage}")
             }
         )
-        val requestQueue = Volley.newRequestQueue(this)
-        requestQueue.add(stringRequest)
+
+        queue.add(stringRequest)
+    }
+    fun buscarUsuario(
+        context: Context,
+        url: String,
+        login: String,
+        senha: String,
+        loginPaciente: String,
+        onSuccess: (Boolean, UserData) -> Unit,  // Retorna o UserData
+        onError: (String) -> Unit
+    ) {
+        val queue = Volley.newRequestQueue(context)
+
+        val stringRequest = object : StringRequest(
+            Method.POST, url,
+            Response.Listener<String> { response ->
+                try {
+                    val doc: Document = Jsoup.parse(response)
+
+                    val flashMessage = doc.select(".alert.alert-info")
+
+                    if (flashMessage.isNotEmpty()) {
+                        val flashText = flashMessage.text()
+                        if (flashText.contains("Usuário ou senha em branco!") ||
+                            flashText.contains("Usuário ou senha inválidos")) {
+                            onError(flashText)
+                        } else {
+                            onError("Erro desconhecido: $flashText")
+                        }
+                    } else {
+                        // Pega a secção de onde os dados estão
+                        val loggedInSection = doc.select("#paciente-logado")
+
+                        if (loggedInSection.isNotEmpty()) {
+                            // Extrai os campos que precisas
+                            val displayName = loggedInSection.select("span#display_name").text() ?: "Usuário"
+                            val dataNasc = loggedInSection.select("span#data_nasc").text() ?: "N/A"
+                            val email = loggedInSection.select("span#user_email").text() ?: "N/A"
+                            val telefone = loggedInSection.select("span#telefone").text() ?: "N/A"
+
+                            // Cria o objeto UserData com os valores extraídos
+                            val userData = UserData(
+                                displayName = displayName,
+                                dataNasc = dataNasc,
+                                email = email,
+                                telefone = telefone
+                            )
+
+                            // Passa o objeto UserData no onSuccess
+                            onSuccess(true, userData)
+                        } else {
+                            onError("Credenciais inválidas ou problema na autenticação.")
+                        }
+                    }
+                } catch (e: Exception) {
+                    onError("Erro ao processar a resposta: ${e.localizedMessage}")
+                }
+            },
+            Response.ErrorListener { error ->
+                onError("Erro na conexão: ${error.localizedMessage}")
+            }
+        ) {
+            override fun getParams(): Map<String, String> {
+                return mapOf(
+                    "login" to login,
+                    "senha" to senha,
+                    "_wpnonce" to loginPaciente
+                )
+            }
+        }
+
+        queue.add(stringRequest)
     }
 
-    fun buscarResultados(
-        URL: String,
+
+
+    private fun buscarResultados(
+        context: Context,
+        url: String,
         onSuccess: (List<ResultadoExame>) -> Unit,
         onError: (String) -> Unit
     ) {
+        val queue = Volley.newRequestQueue(context)
+
         val stringRequest = StringRequest(
-            Request.Method.GET, URL,
+            Request.Method.GET, url,
             { response ->
                 try {
                     val document: Document = Jsoup.parse(response)
@@ -96,47 +169,27 @@ class MainActivity : ComponentActivity() {
                     onError("Erro ao processar os resultados: ${e.message}\nResposta HTML: $response")
                 }
             },
-            { error: VolleyError ->
-                // Lidar com erros de conexão
+            { error ->
                 val errorResponse = error.networkResponse?.data?.let {
                     String(it, Charsets.UTF_8)
                 } ?: "Resposta do servidor não disponível"
                 onError("ERROR DE CONEXÃO: ${error.message}\nResposta do servidor: $errorResponse")
             }
         )
-        val requestQueue = Volley.newRequestQueue(this)
-        requestQueue.add(stringRequest)
+        queue.add(stringRequest)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
         val navController = rememberNavController()
+        val context = LocalContext.current
+
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
                 LoginScreen(onLoginSuccess = { user_login, user_pass ->
-                    val url = "https://sosneuro.com.br/index.php/entrega-de-exames?user_login=$user_login&user_pass=$user_pass"
+                    navController.navigate("user_data?userData=$user_login")
 
-                    buscarUsuario(url,
-                        onSuccess = { usuarioValido, userData ->
-                            if (usuarioValido) {
-                                val resultadoUrl = "https://sosneuro.com.br/index.php/entrega-de-exames"
-                                buscarResultados(resultadoUrl,
-                                    onSuccess = {
-                                        navController.navigate("user_data?userData=$userData")
-                                    },
-                                    onError = { error ->
-                                        Toast.makeText(applicationContext, error, Toast.LENGTH_SHORT).show()
-                                    }
-                                )
-                            } else {
-                                Toast.makeText(applicationContext, "Usuário inválido", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        onError = {
-                            Toast.makeText(applicationContext, it, Toast.LENGTH_SHORT).show()
-                        }
-                    )
                 })
             }
             composable("user_data?userData={userData}") { backStackEntry ->
@@ -147,7 +200,7 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(userData) {
                     val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
-                    buscarResultados(url,
+                    buscarResultados(context, url,
                         onSuccess = { fetchedResultados ->
                             resultados = fetchedResultados
                             loading = false
@@ -161,7 +214,7 @@ class MainActivity : ComponentActivity() {
 
                 if (loading) {
                     if (errorMessage != null) {
-                        Toast.makeText(applicationContext, errorMessage, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     } else {
                         Text("Carregando...")
                     }

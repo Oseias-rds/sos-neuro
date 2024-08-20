@@ -31,13 +31,11 @@ import org.json.JSONObject
 fun UserDataScreen(userData: String, resultados: List<ResultadoExame>, onLogout: () -> Unit) {
     val context = LocalContext.current
 
-    // Inicialmente definimos valores padrão
     var displayName by remember { mutableStateOf("Usuário") }
     var dataNasc by remember { mutableStateOf("N/A") }
     var email by remember { mutableStateOf("N/A") }
     var telefone by remember { mutableStateOf("N/A") }
 
-    // Tenta converter userData para JSON
     LaunchedEffect(userData) {
         try {
             val json = JSONObject(userData)
