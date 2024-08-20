@@ -17,6 +17,7 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
+import com.example.sosneuromobile.ui.theme.ExameData
 import com.example.sosneuromobile.ui.theme.SosNeuroMobileTheme
 import com.example.sosneuromobile.ui.theme.LoginScreen
 import com.example.sosneuromobile.ui.theme.ResultadoExame
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
         login: String,
         senha: String,
         loginPaciente: String,
-        onSuccess: (Boolean, UserData) -> Unit,  // Retorna o UserData
+        onSuccess: (Boolean, UserData) -> Unit,
         onError: (String) -> Unit
     ) {
         val queue = Volley.newRequestQueue(context)
@@ -82,41 +83,35 @@ class MainActivity : ComponentActivity() {
                 try {
                     val doc: Document = Jsoup.parse(response)
 
-                    val flashMessage = doc.select(".alert.alert-info")
-
-                    if (flashMessage.isNotEmpty()) {
-                        val flashText = flashMessage.text()
-                        if (flashText.contains("Usuário ou senha em branco!") ||
-                            flashText.contains("Usuário ou senha inválidos")) {
-                            onError(flashText)
-                        } else {
-                            onError("Erro desconhecido: $flashText")
-                        }
-                    } else {
-                        // Pega a secção de onde os dados estão
-                        val loggedInSection = doc.select("#paciente-logado")
-
-                        if (loggedInSection.isNotEmpty()) {
-                            // Extrai os campos que precisas
-                            val displayName = loggedInSection.select("span#display_name").text() ?: "Usuário"
-                            val dataNasc = loggedInSection.select("span#data_nasc").text() ?: "N/A"
-                            val email = loggedInSection.select("span#user_email").text() ?: "N/A"
-                            val telefone = loggedInSection.select("span#telefone").text() ?: "N/A"
-
-                            // Cria o objeto UserData com os valores extraídos
-                            val userData = UserData(
-                                displayName = displayName,
-                                dataNasc = dataNasc,
-                                email = email,
-                                telefone = telefone
-                            )
-
-                            // Passa o objeto UserData no onSuccess
-                            onSuccess(true, userData)
-                        } else {
-                            onError("Credenciais inválidas ou problema na autenticação.")
-                        }
+                    val flashMessage = doc.select(".alert.alert-info").text()
+                    if (flashMessage.contains("Usuário ou senha em branco!") ||
+                        flashMessage.contains("Usuário ou senha inválidos")) {
+                        onError(flashMessage)
+                        return@Listener
                     }
+
+                    val infoPacienteDiv = doc.select(".info-paciente").first()
+                    if (infoPacienteDiv == null) {
+                        onError("Credenciais inválidas ou problema na autenticação.")
+                        return@Listener
+                    }
+                    val infoPacienteText = infoPacienteDiv.text()
+                    val lines = infoPacienteText.split("\n").map { it.trim() }
+
+
+                    val displayName = lines.getOrElse(0) { "Nome não disponível" }
+                    val dataNasc = lines.getOrElse(1) { "Data não disponível" }.substringBefore(",").trim()
+                    val email = lines.getOrElse(2) { "Email não disponível" }
+                    val telefone = lines.getOrElse(3) { "Telefone não disponível" }
+
+                    val userData = UserData(
+                        displayName = displayName,
+                        dataNasc = dataNasc,
+                        email = email,
+                        telefone = telefone
+                    )
+
+                    onSuccess(true, userData)
                 } catch (e: Exception) {
                     onError("Erro ao processar a resposta: ${e.localizedMessage}")
                 }

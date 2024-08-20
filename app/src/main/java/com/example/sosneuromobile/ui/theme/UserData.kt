@@ -4,5 +4,6 @@ data class UserData(
     val displayName: String,
     val dataNasc: String,
     val email: String,
-    val telefone: String
+    val telefone: String,
+    val exames: List<ExameData> = emptyList()
 )
