@@ -1,6 +1,5 @@
 package com.example.sosneuromobile.ui.theme
 
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,14 +17,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.android.volley.Request
-import com.android.volley.Response
-import com.android.volley.toolbox.StringRequest
-import com.android.volley.toolbox.Volley
 import com.example.sosneuromobile.MainActivity
 import com.example.sosneuromobile.R
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

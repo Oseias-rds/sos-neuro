@@ -19,7 +19,6 @@ import com.android.volley.Request
 import com.android.volley.Response
 import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
-import com.example.sosneuromobile.ui.theme.ExameData
 import com.example.sosneuromobile.ui.theme.SosNeuroMobileTheme
 import com.example.sosneuromobile.ui.theme.LoginScreen
 import com.example.sosneuromobile.ui.theme.ResultadoExame
