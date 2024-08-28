@@ -1,12 +1,14 @@
 package com.example.sosneuromobile
 
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -95,20 +97,21 @@ class MainActivity : ComponentActivity() {
                         onError("Credenciais inválidas ou problema na autenticação.")
                         return@Listener
                     }
-                    val infoPacienteText = infoPacienteDiv.text()
-                    val lines = infoPacienteText.split("\n").map { it.trim() }
+                    val infoPacienteHtml = infoPacienteDiv.html().replace("</p>", "").replace("<p>", "")
+                    val lines = infoPacienteHtml.split("<br>").map { it.trim() }
 
-
-                    val displayName = lines.getOrElse(0) { "Nome não disponível" }
+                    val displayName = lines.getOrElse(0) { "Nome não disponível" }.substringBefore(",").trim()
                     val dataNasc = lines.getOrElse(1) { "Data não disponível" }.substringBefore(",").trim()
-                    val email = lines.getOrElse(2) { "Email não disponível" }
-                    val telefone = lines.getOrElse(3) { "Telefone não disponível" }
+                    val idade = lines.getOrElse(1) { "Idade não disponível" }.substringAfter(",").trim()
+                    val email = lines.getOrElse(2) { "Email não disponível" }.substringBefore(",").trim()
+                    val telefone = lines.getOrElse(3) { "Telefone não disponível" }.substringBefore(",").trim()
 
                     val userData = UserData(
                         displayName = displayName,
                         dataNasc = dataNasc,
                         email = email,
-                        telefone = telefone
+                        telefone = telefone,
+                        idade = idade
                     )
 
                     onSuccess(true, userData)
@@ -117,7 +120,10 @@ class MainActivity : ComponentActivity() {
                 }
             },
             Response.ErrorListener { error ->
-                onError("Erro na conexão: ${error.localizedMessage}")
+                val errorResponse = error.networkResponse?.data?.let {
+                    String(it, Charsets.UTF_8)
+                } ?: "Resposta do servidor não disponível"
+                onError("Erro na conexão: ${error.localizedMessage}\nResposta do servidor: $errorResponse")
             }
         ) {
             override fun getParams(): Map<String, String> {
@@ -183,8 +189,7 @@ class MainActivity : ComponentActivity() {
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
                 LoginScreen(onLoginSuccess = { user_login, user_pass ->
-                    navController.navigate("user_data?userData=$user_login")
-
+                    navController.navigate("user_data?userData=${Uri.encode(user_login)}")
                 })
             }
             composable("user_data?userData={userData}") { backStackEntry ->
@@ -194,31 +199,41 @@ class MainActivity : ComponentActivity() {
                 var errorMessage by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(userData) {
-                    val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
-                    buscarResultados(context, url,
-                        onSuccess = { fetchedResultados ->
-                            resultados = fetchedResultados
-                            loading = false
-                        },
-                        onError = { error ->
-                            errorMessage = error
-                            loading = false
-                        }
-                    )
+                    if (!userData.isNullOrEmpty()) {
+                        val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
+                        buscarResultados(context, url,
+                            onSuccess = { fetchedResultados ->
+                                resultados = fetchedResultados
+                                loading = false
+                            },
+                            onError = { error ->
+                                errorMessage = error
+                                loading = false
+                            }
+                        )
+                    } else {
+                        errorMessage = "Dados do usuário não encontrados."
+                        loading = false
+                    }
                 }
 
                 if (loading) {
                     if (errorMessage != null) {
                         Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     } else {
-                        Text("Carregando...")
+                        Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
-                    UserDataScreen(userData = userData ?: "", resultados = resultados, onLogout = {
-                        navController.popBackStack()
-                    })
+                    UserDataScreen(
+                        userData = userData?.let { UserData(it, "", "", "","") } ?: UserData("", "", "", "",""),
+                        resultados = resultados,
+                        onLogout = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
             }
         }
     }
+
 }

@@ -28,25 +28,8 @@ import org.json.JSONObject
 @Composable
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
-fun UserDataScreen(userData: String, resultados: List<ResultadoExame>, onLogout: () -> Unit) {
+fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogout: () -> Unit) {
     val context = LocalContext.current
-
-    var displayName by remember { mutableStateOf("Usuário") }
-    var dataNasc by remember { mutableStateOf("N/A") }
-    var email by remember { mutableStateOf("N/A") }
-    var telefone by remember { mutableStateOf("N/A") }
-
-    LaunchedEffect(userData) {
-        try {
-            val json = JSONObject(userData)
-            displayName = json.optString("display_name", "Usuário")
-            dataNasc = json.optString("data_nasc", "N/A")
-            email = json.optString("user_email", "N/A")
-            telefone = json.optString("telefone", "N/A")
-        } catch (e: JSONException) {
-            Toast.makeText(context, "Erro ao processar dados do usuário: ${e.message}", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -75,7 +58,7 @@ fun UserDataScreen(userData: String, resultados: List<ResultadoExame>, onLogout:
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Olá, ${displayName.uppercase()}",
+                    text = "Olá, ${userData.displayName.uppercase()}",
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
@@ -106,24 +89,24 @@ fun UserDataScreen(userData: String, resultados: List<ResultadoExame>, onLogout:
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = displayName.uppercase(),
+                        text = "Nome: ${userData.displayName.uppercase()}",
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Text(
-                        text = "Data de Nascimento: $dataNasc",
+                        text = "Data de Nascimento: ${userData.dataNasc}",
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Text(
-                        text = "Email: $email",
+                        text = "Email: ${userData.email}",
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Text(
-                        text = "Telefone: $telefone",
+                        text = "Telefone: ${userData.telefone}",
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                 }
 
-                TextButton(onClick = { /* Editar informações */ }) {
+                TextButton(onClick = { /* Implementar navegação para editar informações */ }) {
                     Text(text = "Editar informações", color = Color(0xFF1565C0), fontSize = 18.sp)
                 }
 
