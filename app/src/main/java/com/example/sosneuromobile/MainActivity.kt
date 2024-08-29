@@ -24,6 +24,7 @@ import com.example.sosneuromobile.ui.theme.LoginScreen
 import com.example.sosneuromobile.ui.theme.ResultadoExame
 import com.example.sosneuromobile.ui.theme.UserData
 import com.example.sosneuromobile.ui.theme.UserDataScreen
+import com.google.gson.Gson
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
@@ -96,6 +97,8 @@ class MainActivity : ComponentActivity() {
                         onError("Credenciais inválidas ou problema na autenticação.")
                         return@Listener
                     }
+
+                    // Processar informações do paciente
                     val infoPacienteHtml = infoPacienteDiv.html().replace("</p>", "").replace("<p>", "")
                     val lines = infoPacienteHtml.split("<br>").map { it.trim() }
 
@@ -136,6 +139,7 @@ class MainActivity : ComponentActivity() {
 
         queue.add(stringRequest)
     }
+
 
 
 
@@ -188,11 +192,13 @@ class MainActivity : ComponentActivity() {
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
                 LoginScreen(onLoginSuccess = { user_login, user_pass ->
-                    navController.navigate("user_data?userData=${Uri.encode(user_login)}")
+                    // Codifica a senha ou outros dados sensíveis
+                    navController.navigate("user_data?userData=${Uri.encode(user_pass)}")
                 })
             }
             composable("user_data?userData={userData}") { backStackEntry ->
-                val userData = backStackEntry.arguments?.getString("userData")
+                // Decodifica os dados do usuário
+                val userData = backStackEntry.arguments?.getString("userData")?.let { Uri.decode(it) }
                 var resultados by remember { mutableStateOf(emptyList<ResultadoExame>()) }
                 var loading by remember { mutableStateOf(true) }
                 var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -223,16 +229,35 @@ class MainActivity : ComponentActivity() {
                         Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
+                    // Aqui, se necessário, você pode fazer o parse adicional para preencher os campos
                     UserDataScreen(
-                        userData = userData?.let { UserData(it, "", "", "","") } ?: UserData("", "", "", "",""),
+                        userData = userData?.let {
+                            // Dividimos a string recebida em uma lista de valores usando o delimitador apropriado
+                            val userInfo = it.split(",") // Supondo que os dados estejam separados por vírgulas
+
+                            // Criamos o objeto UserData com os valores respectivos de userInfo
+                            if (userInfo.size >= 5) {
+                                UserData(
+                                    displayName = userInfo[0], // Nome
+                                    dataNasc = userInfo[1],    // Data de Nascimento
+                                    idade = userInfo[2],       // Idade
+                                    email = userInfo[3],       // Email
+                                    telefone = userInfo[4]     // Telefone
+                                )
+                            } else {
+                                UserData("", "", "", "", "")
+                            }
+                        } ?: UserData("", "", "", "", ""), // Fallback para o caso de userData ser nulo
                         resultados = resultados,
                         onLogout = {
                             navController.popBackStack()
                         }
+
                     )
                 }
             }
         }
     }
+
 
 }
