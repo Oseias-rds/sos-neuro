@@ -1,4 +1,3 @@
-
 package com.example.sosneuromobile.ui.theme
 
 import androidx.compose.foundation.Image

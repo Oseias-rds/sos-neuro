@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
     fun getWpnonce(
         context: Context,
         url: String,
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
         queue.add(stringRequest)
     }
+
     fun buscarUsuario(
         context: Context,
         url: String,
@@ -87,7 +89,8 @@ class MainActivity : ComponentActivity() {
 
                     val flashMessage = doc.select(".alert.alert-info").text()
                     if (flashMessage.contains("Usuário ou senha em branco!") ||
-                        flashMessage.contains("Usuário ou senha inválidos")) {
+                        flashMessage.contains("Usuário ou senha inválidos")
+                    ) {
                         onError(flashMessage)
                         return@Listener
                     }
@@ -98,15 +101,20 @@ class MainActivity : ComponentActivity() {
                         return@Listener
                     }
 
-                    // Processar informações do paciente
-                    val infoPacienteHtml = infoPacienteDiv.html().replace("</p>", "").replace("<p>", "")
+                    val infoPacienteHtml =
+                        infoPacienteDiv.html().replace("</p>", "").replace("<p>", "")
                     val lines = infoPacienteHtml.split("<br>").map { it.trim() }
 
-                    val displayName = lines.getOrElse(0) { "Nome não disponível" }.substringBefore(",").trim()
-                    val dataNasc = lines.getOrElse(1) { "Data não disponível" }.substringBefore(",").trim()
-                    val idade = lines.getOrElse(1) { "Idade não disponível" }.substringAfter(",").trim()
-                    val email = lines.getOrElse(2) { "Email não disponível" }.substringBefore(",").trim()
-                    val telefone = lines.getOrElse(3) { "Telefone não disponível" }.substringBefore(",").trim()
+                    val displayName =
+                        lines.getOrElse(0) { "Nome não disponível" }.substringBefore(",").trim()
+                    val dataNasc =
+                        lines.getOrElse(1) { "Data não disponível" }.substringBefore(",").trim()
+                    val idade =
+                        lines.getOrElse(1) { "Idade não disponível" }.substringAfter(",").trim()
+                    val email =
+                        lines.getOrElse(2) { "Email não disponível" }.substringBefore(",").trim()
+                    val telefone =
+                        lines.getOrElse(3) { "Telefone não disponível" }.substringBefore(",").trim()
 
                     val userData = UserData(
                         displayName = displayName,
@@ -139,8 +147,6 @@ class MainActivity : ComponentActivity() {
 
         queue.add(stringRequest)
     }
-
-
 
 
     private fun buscarResultados(
@@ -192,13 +198,12 @@ class MainActivity : ComponentActivity() {
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
                 LoginScreen(onLoginSuccess = { user_login, user_pass ->
-                    // Codifica a senha ou outros dados sensíveis
                     navController.navigate("user_data?userData=${Uri.encode(user_pass)}")
                 })
             }
             composable("user_data?userData={userData}") { backStackEntry ->
-                // Decodifica os dados do usuário
-                val userData = backStackEntry.arguments?.getString("userData")?.let { Uri.decode(it) }
+                val userData =
+                    backStackEntry.arguments?.getString("userData")?.let { Uri.decode(it) }
                 var resultados by remember { mutableStateOf(emptyList<ResultadoExame>()) }
                 var loading by remember { mutableStateOf(true) }
                 var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -229,35 +234,35 @@ class MainActivity : ComponentActivity() {
                         Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
-                    // Aqui, se necessário, você pode fazer o parse adicional para preencher os campos
                     UserDataScreen(
                         userData = userData?.let {
-                            // Dividimos a string recebida em uma lista de valores usando o delimitador apropriado
-                            val userInfo = it.split(",") // Supondo que os dados estejam separados por vírgulas
+                            val userInfo = it.split(",")
 
-                            // Criamos o objeto UserData com os valores respectivos de userInfo
                             if (userInfo.size >= 5) {
                                 UserData(
-                                    displayName = userInfo[0], // Nome
-                                    dataNasc = userInfo[1],    // Data de Nascimento
-                                    idade = userInfo[2],       // Idade
-                                    email = userInfo[3],       // Email
-                                    telefone = userInfo[4]     // Telefone
+                                    displayName = userInfo[0],
+                                    dataNasc = userInfo[1],
+                                    idade = userInfo[2],
+                                    email = userInfo[3],
+                                    telefone = userInfo[4]
                                 )
                             } else {
                                 UserData("", "", "", "", "")
                             }
-                        } ?: UserData("", "", "", "", ""), // Fallback para o caso de userData ser nulo
+                        } ?: UserData(
+                            "",
+                            "",
+                            "",
+                            "",
+                            ""
+                        ), // Fallback para o caso de userData ser nulo
                         resultados = resultados,
                         onLogout = {
                             navController.popBackStack()
                         }
-
                     )
                 }
             }
         }
     }
-
-
 }
