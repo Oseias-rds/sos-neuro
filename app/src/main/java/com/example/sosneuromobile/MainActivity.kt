@@ -28,7 +28,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.select.Elements
 
 class MainActivity : ComponentActivity() {
 
@@ -150,45 +149,67 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    private fun buscarResultados(
+    fun buscarResultados(
         context: Context,
         url: String,
+        login: String,
+        senha: String,
+        loginPaciente: String,
         onSuccess: (List<ResultadoExame>) -> Unit,
         onError: (String) -> Unit
     ) {
         val queue = Volley.newRequestQueue(context)
 
-        val stringRequest = StringRequest(
-            Request.Method.GET, url,
-            { response ->
+        val stringRequest = object : StringRequest(
+            Method.POST, url,
+            Response.Listener<String> { response ->
                 try {
-                    val document: Document = Jsoup.parse(response)
-                    val resultados = mutableListOf<ResultadoExame>()
+                    val doc: Document = Jsoup.parse(response)
 
-                    val elementos: Elements = document.select("ul.linha-resultados-exames")
+                    val flashMessage = doc.select(".alert.alert-info").text()
+                    if (flashMessage.contains("Usuário ou senha em branco!") ||
+                        flashMessage.contains("Usuário ou senha inválidos")
+                    ) {
+                        onError(flashMessage)
+                        return@Listener
+                    }
 
-                    for (elemento in elementos) {
+                    val resultados = doc.select("ul#table-entrega-de-exames > li.table-row").map { elemento ->
                         val data = elemento.select("li:eq(0) p").text()
                         val tipoExame = elemento.select("li:eq(1) p").text()
                         val linkBaixar = elemento.select("li:eq(2) a").attr("href")
-
-                        resultados.add(ResultadoExame(data, tipoExame, linkBaixar))
+                        ResultadoExame(data, tipoExame, linkBaixar)
                     }
 
-                    onSuccess(resultados)
+                    if (resultados.isEmpty()) {
+                        onError("Nenhum exame encontrado para o usuário.")
+                    } else {
+                        onSuccess(resultados)
+                    }
                 } catch (e: Exception) {
-                    onError("Erro ao processar os resultados: ${e.message}\nResposta HTML: $response")
+                    onError("Erro ao processar a resposta: ${e.localizedMessage}")
                 }
             },
-            { error ->
+            Response.ErrorListener { error ->
                 val errorResponse = error.networkResponse?.data?.let {
                     String(it, Charsets.UTF_8)
                 } ?: "Resposta do servidor não disponível"
-                onError("ERROR DE CONEXÃO: ${error.message}\nResposta do servidor: $errorResponse")
+                onError("Erro na conexão: ${error.localizedMessage}\nResposta do servidor: $errorResponse")
             }
-        )
+        ) {
+            override fun getParams(): Map<String, String> {
+                return mapOf(
+                    "login" to login,
+                    "senha" to senha,
+                    "_wpnonce" to loginPaciente
+                )
+            }
+        }
+
         queue.add(stringRequest)
     }
+
+
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
@@ -199,12 +220,15 @@ class MainActivity : ComponentActivity() {
             composable("login") {
                 LoginScreen(onLoginSuccess = { user_login, user_pass, userData ->
                     val userDataJson = Uri.encode(Gson().toJson(userData))
-                    navController.navigate("user_data?userData=$userDataJson")
+                    navController.navigate("user_data?userData=$userDataJson&login=$user_login&senha=$user_pass")
                 })
-
             }
-            composable("user_data?userData={userData}") { backStackEntry ->
+
+            composable("user_data?userData={userData}&login={login}&senha={senha}") { backStackEntry ->
                 val userDataJson = backStackEntry.arguments?.getString("userData")
+                val user_login = backStackEntry.arguments?.getString("login")
+                val user_pass = backStackEntry.arguments?.getString("senha")
+
                 val userData: UserData? = try {
                     Gson().fromJson(userDataJson, UserData::class.java)
                 } catch (e: JsonSyntaxException) {
@@ -215,10 +239,16 @@ class MainActivity : ComponentActivity() {
                 var loading by remember { mutableStateOf(true) }
                 var errorMessage by remember { mutableStateOf("") }
 
-                LaunchedEffect(userData) {
-                    if (userData != null) {
+                // Fetching results once userData is available
+                LaunchedEffect(userData, user_login, user_pass) {
+                    if (userData != null && !user_login.isNullOrEmpty() && !user_pass.isNullOrEmpty()) {
                         val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
-                        buscarResultados(context, url,
+                        buscarResultados(
+                            context = context,
+                            url = url,
+                            login = user_login,
+                            senha = user_pass,
+                            loginPaciente = user_login,
                             onSuccess = { fetchedResultados ->
                                 resultados = fetchedResultados
                                 loading = false
@@ -229,7 +259,7 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     } else {
-                        errorMessage = "Dados do usuário não encontrados."
+                        errorMessage = "Dados do usuário não encontrados ou credenciais inválidas."
                         loading = false
                     }
                 }
@@ -241,13 +271,15 @@ class MainActivity : ComponentActivity() {
                         Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
-                    UserDataScreen(
-                        userData = userData!!,
-                        resultados = resultados,
-                        onLogout = {
-                            navController.popBackStack()
-                        }
-                    )
+                    userData?.let {
+                        UserDataScreen(
+                            userData = it,
+                            resultados = resultados,
+                            onLogout = {
+                                navController.popBackStack()
+                            }
+                        )
+                    }
                 }
             }
         }
