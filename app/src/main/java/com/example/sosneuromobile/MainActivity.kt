@@ -25,6 +25,7 @@ import com.example.sosneuromobile.ui.theme.ResultadoExame
 import com.example.sosneuromobile.ui.theme.UserData
 import com.example.sosneuromobile.ui.theme.UserDataScreen
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
@@ -188,7 +189,6 @@ class MainActivity : ComponentActivity() {
         )
         queue.add(stringRequest)
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
@@ -197,19 +197,26 @@ class MainActivity : ComponentActivity() {
 
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
-                LoginScreen(onLoginSuccess = { user_login, user_pass ->
-                    navController.navigate("user_data?userData=${Uri.encode(user_pass)}")
+                LoginScreen(onLoginSuccess = { user_login, user_pass, userData ->
+                    val userDataJson = Uri.encode(Gson().toJson(userData))
+                    navController.navigate("user_data?userData=$userDataJson")
                 })
+
             }
             composable("user_data?userData={userData}") { backStackEntry ->
-                val userData =
-                    backStackEntry.arguments?.getString("userData")?.let { Uri.decode(it) }
+                val userDataJson = backStackEntry.arguments?.getString("userData")
+                val userData: UserData? = try {
+                    Gson().fromJson(userDataJson, UserData::class.java)
+                } catch (e: JsonSyntaxException) {
+                    null
+                }
+
                 var resultados by remember { mutableStateOf(emptyList<ResultadoExame>()) }
                 var loading by remember { mutableStateOf(true) }
-                var errorMessage by remember { mutableStateOf<String?>(null) }
+                var errorMessage by remember { mutableStateOf("") }
 
                 LaunchedEffect(userData) {
-                    if (!userData.isNullOrEmpty()) {
+                    if (userData != null) {
                         val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
                         buscarResultados(context, url,
                             onSuccess = { fetchedResultados ->
@@ -228,34 +235,14 @@ class MainActivity : ComponentActivity() {
                 }
 
                 if (loading) {
-                    if (errorMessage != null) {
+                    if (errorMessage.isNotEmpty()) {
                         Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     } else {
                         Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
                     UserDataScreen(
-                        userData = userData?.let {
-                            val userInfo = it.split(",")
-
-                            if (userInfo.size >= 5) {
-                                UserData(
-                                    displayName = userInfo[0],
-                                    dataNasc = userInfo[1],
-                                    idade = userInfo[2],
-                                    email = userInfo[3],
-                                    telefone = userInfo[4]
-                                )
-                            } else {
-                                UserData("", "", "", "", "")
-                            }
-                        } ?: UserData(
-                            "",
-                            "",
-                            "",
-                            "",
-                            ""
-                        ), // Fallback para o caso de userData ser nulo
+                        userData = userData!!,
                         resultados = resultados,
                         onLogout = {
                             navController.popBackStack()

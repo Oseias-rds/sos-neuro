@@ -23,7 +23,7 @@ import com.example.sosneuromobile.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
+fun LoginScreen(onLoginSuccess: (String, String, UserData) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,7 +70,7 @@ fun LoginScreen(onLoginSuccess: (String, String) -> Unit) {
 }
 
 @Composable
-fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
+fun LoginFields(onLoginSuccess: (String, String,UserData) -> Unit) {
     val userLoginState = remember { mutableStateOf("") }
     val passwordState = remember { mutableStateOf("") }
     val loginErrorState = remember { mutableStateOf<String?>(null) }
@@ -94,7 +94,7 @@ fun LoginFields(onLoginSuccess: (String, String) -> Unit) {
                         loginPaciente = wpnonce,
                         onSuccess = { usuarioValido, userData ->
                             if (usuarioValido) {
-                                onLoginSuccess(user_login, userData.toString())
+                                onLoginSuccess(user_login, userData.toString(), userData)
                             } else {
                                 loginErrorState.value = "Usuário inválido"
                             }
