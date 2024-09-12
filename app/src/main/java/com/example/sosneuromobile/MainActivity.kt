@@ -182,10 +182,10 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val resultados = doc.select("ul.linha-resultados-exames").map { elemento ->
-                        val data = elemento.select("li:eq(0) p").text()
+                        val dataRealizacao = elemento.select("li:eq(0) p").text()
                         val tipoExame = elemento.select("li:eq(1) p").text()
                         val linkBaixar = elemento.select("li:eq(2) a").attr("href")
-                        ResultadoExame(data, tipoExame, linkBaixar)
+                        ResultadoExame(dataRealizacao, tipoExame, linkBaixar)
                     }
 
                     if (resultados.isEmpty()) {
@@ -215,7 +215,6 @@ class MainActivity : ComponentActivity() {
 
         queue.add(stringRequest)
     }
-
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
@@ -224,15 +223,16 @@ class MainActivity : ComponentActivity() {
 
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
-                LoginScreen(onLoginSuccess = { user_login, user_pass, userData ->
+                LoginScreen { user_login, user_pass, userData, resultados ->
                     val userDataJson = Uri.encode(Gson().toJson(userData))
-                    navController.navigate("user_data?userData=$userDataJson&login=$user_login&senha=$user_pass")
-                })
+                    navController.navigate("user_data?userData=$userDataJson&login=$user_login&senha=$user_pass&resultados=${Uri.encode(Gson().toJson(resultados))}")
+                }
             }
-            composable("user_data?userData={userData}&login={login}&senha={senha}") { backStackEntry ->
+            composable("user_data?userData={userData}&login={login}&senha={senha}&resultados={resultados}") { backStackEntry ->
                 val userDataJson = backStackEntry.arguments?.getString("userData")
                 val user_login = backStackEntry.arguments?.getString("login")
                 val user_pass = backStackEntry.arguments?.getString("senha")
+                val resultadosJson = backStackEntry.arguments?.getString("resultados")
 
                 val userData: UserData? = try {
                     Gson().fromJson(userDataJson, UserData::class.java)
@@ -240,51 +240,20 @@ class MainActivity : ComponentActivity() {
                     null
                 }
 
-                var resultados by remember { mutableStateOf(emptyList<ResultadoExame>()) }
-                var loading by remember { mutableStateOf(true) }
-                var errorMessage by remember { mutableStateOf("") }
-
-                LaunchedEffect(userData, user_login, user_pass) {
-                    if (userData != null && !user_login.isNullOrEmpty() && !user_pass.isNullOrEmpty()) {
-                        val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
-                        buscarResultados(
-                            context = context,
-                            url = url,
-                            login = user_login,
-                            senha = user_pass,
-                            loginPaciente = user_login,
-                            onSuccess = { fetchedResultados ->
-                                resultados = fetchedResultados
-                                loading = false
-                            },
-                            onError = { error ->
-                                errorMessage = error
-                                loading = false
-                            }
-                        )
-                    } else {
-                        errorMessage = "Dados do usuário não encontrados ou credenciais inválidas."
-                        loading = false
-                    }
+                val resultados: List<ResultadoExame> = try {
+                    Gson().fromJson(resultadosJson, Array<ResultadoExame>::class.java).toList()
+                } catch (e: JsonSyntaxException) {
+                    emptyList()
                 }
 
-                if (loading) {
-                    if (errorMessage.isNotEmpty()) {
-                        Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-                    } else {
-                        CircularProgressIndicator()
-                        Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
-                    }
-                } else {
-                    userData?.let {
-                        UserDataScreen(
-                            userData = it,
-                            resultados = resultados,
-                            onLogout = {
-                                navController.popBackStack()
-                            }
-                        )
-                    }
+                if (userData != null) {
+                    UserDataScreen(
+                        userData = userData,
+                        resultados = resultados,
+                        onLogout = {
+                            navController.popBackStack()
+                        }
+                    )
                 }
             }
         }
