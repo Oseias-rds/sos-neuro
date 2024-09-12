@@ -4,6 +4,14 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2024-09-12T17:43:24.954182900Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\MENCOL\.android\avd\Pixel_Fold_API_UpsideDownCakePrivacySandbox.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="DefaultPreview">
         <option name="selectionMode" value="DROPDOWN" />
@@ -21,10 +29,10 @@
       </SelectionState>
       <SelectionState runConfigName="MainActivity">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2024-09-02T02:24:20.276594300Z">
+        <DropdownSelection timestamp="2024-09-12T17:41:36.873692900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\MENCOL\.android\avd\Pixel_8_Pro_API_UpsideDownCakePrivacySandbox.avd" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\MENCOL\.android\avd\Pixel_Fold_API_UpsideDownCakePrivacySandbox.avd" />
             </handle>
           </Target>
         </DropdownSelection>

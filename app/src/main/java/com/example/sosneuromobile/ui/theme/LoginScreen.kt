@@ -1,7 +1,5 @@
 package com.example.sosneuromobile.ui.theme
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,7 +21,7 @@ import com.example.sosneuromobile.MainActivity
 import com.example.sosneuromobile.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(onLoginSuccess: (String, String, UserData, List<ResultadoExame>) -> Unit) {
+fun LoginScreen(onLoginSuccess: (String, String, UserData, List<ExamResult>) -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,37 +68,37 @@ fun LoginScreen(onLoginSuccess: (String, String, UserData, List<ResultadoExame>)
 }
 
 @Composable
-fun LoginFields(onLoginSuccess: (String, String, UserData, List<ResultadoExame>) -> Unit) {
+fun LoginFields(onLoginSuccess: (String, String, UserData, List<ExamResult>) -> Unit) {
     val userLoginState = remember { mutableStateOf("") }
     val passwordState = remember { mutableStateOf("") }
     val loginErrorState = remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
 
-    fun authenticate(user_login: String, user_pass: String) {
+    fun authenticate(userLogin: String, userPassword: String) {
         val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
 
         if (context is MainActivity) {
-            context.getWpnonce(
+            context.getWpNonce(
                 context = context,
                 url = url,
                 onSuccess = { wpnonce ->
-                    context.buscarUsuario(
+                    context.fetchUser(
                         context = context,
                         url = url,
-                        login = user_login,
-                        senha = user_pass,
-                        loginPaciente = wpnonce,
-                        onSuccess = { usuarioValido, userData ->
-                            if (usuarioValido) {
-                                context.buscarResultados(
+                        login = userLogin,
+                        password = userPassword,
+                        userNonce = wpnonce,
+                        onSuccess = { validUser, userData ->
+                            if (validUser) {
+                                context.fetchExamResults(
                                     context = context,
                                     url = url,
-                                    login = user_login,
-                                    senha = user_pass,
-                                    loginPaciente = wpnonce,
-                                    onSuccess = { resultados ->
-                                        onLoginSuccess(user_login, user_pass, userData, resultados)
+                                    login = userLogin,
+                                    password = userPassword,
+                                    userNonce = wpnonce,
+                                    onSuccess = { results ->
+                                        onLoginSuccess(userLogin, userPassword, userData, results)
                                     },
                                     onError = { error ->
                                         loginErrorState.value = error

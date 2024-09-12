@@ -28,7 +28,7 @@ import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.sosneuromobile.ui.theme.SosNeuroMobileTheme
 import com.example.sosneuromobile.ui.theme.LoginScreen
-import com.example.sosneuromobile.ui.theme.ResultadoExame
+import com.example.sosneuromobile.ui.theme.ExamResult
 import com.example.sosneuromobile.ui.theme.UserData
 import com.example.sosneuromobile.ui.theme.UserDataScreen
 import com.google.gson.Gson
@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun getWpnonce(
+    fun getWpNonce(
         context: Context,
         url: String,
         onSuccess: (String) -> Unit,
@@ -78,12 +78,12 @@ class MainActivity : ComponentActivity() {
         queue.add(stringRequest)
     }
 
-    fun buscarUsuario(
+    fun fetchUser(
         context: Context,
         url: String,
         login: String,
-        senha: String,
-        loginPaciente: String,
+        password: String,
+        userNonce: String,
         onSuccess: (Boolean, UserData) -> Unit,
         onError: (String) -> Unit
     ) {
@@ -103,33 +103,33 @@ class MainActivity : ComponentActivity() {
                         return@Listener
                     }
 
-                    val infoPacienteDiv = doc.select(".info-paciente").first()
-                    if (infoPacienteDiv == null) {
+                    val userInfoDiv = doc.select(".info-paciente").first()
+                    if (userInfoDiv == null) {
                         onError("Credenciais inválidas ou problema na autenticação.")
                         return@Listener
                     }
 
-                    val infoPacienteHtml =
-                        infoPacienteDiv.html().replace("</p>", "").replace("<p>", "")
-                    val lines = infoPacienteHtml.split("<br>").map { it.trim() }
+                    val userInfoHtml =
+                        userInfoDiv.html().replace("</p>", "").replace("<p>", "")
+                    val lines = userInfoHtml.split("<br>").map { it.trim() }
 
                     val displayName =
                         lines.getOrElse(0) { "Nome não disponível" }.substringBefore(",").trim()
-                    val dataNasc =
+                    val birthDate =
                         lines.getOrElse(1) { "Data não disponível" }.substringBefore(",").trim()
-                    val idade =
+                    val age =
                         lines.getOrElse(1) { "Idade não disponível" }.substringAfter(",").trim()
                     val email =
                         lines.getOrElse(2) { "Email não disponível" }.substringBefore(",").trim()
-                    val telefone =
+                    val phone =
                         lines.getOrElse(3) { "Telefone não disponível" }.substringBefore(",").trim()
 
                     val userData = UserData(
                         displayName = displayName,
-                        dataNasc = dataNasc,
+                        birthDate = birthDate,
                         email = email,
-                        telefone = telefone,
-                        idade = idade
+                        phone = phone,
+                        age = age
                     )
 
                     onSuccess(true, userData)
@@ -147,8 +147,8 @@ class MainActivity : ComponentActivity() {
             override fun getParams(): Map<String, String> {
                 return mapOf(
                     "login" to login,
-                    "senha" to senha,
-                    "_wpnonce" to loginPaciente
+                    "senha" to password,
+                    "_wpnonce" to userNonce
                 )
             }
         }
@@ -156,20 +156,20 @@ class MainActivity : ComponentActivity() {
         queue.add(stringRequest)
     }
 
-    fun parseResultadoExame(elemento: Element): ResultadoExame {
-        val dataRealizacao = elemento.select("li:eq(0) p").text().trim()
-        val tipoExame = elemento.select("li:eq(1) p").text().trim()
-        val linkBaixar = elemento.select("li:eq(2) a").attr("href").trim()
-        return ResultadoExame(dataRealizacao, tipoExame, linkBaixar)
+    fun parseExamResult(element: Element): ExamResult {
+        val examDate = element.select("li:eq(0) p").text().trim()
+        val examType = element.select("li:eq(1) p").text().trim()
+        val downloadLink = element.select("li:eq(2) a").attr("href").trim()
+        return ExamResult(examDate, examType, downloadLink)
     }
 
-    fun buscarResultados(
+    fun fetchExamResults(
         context: Context,
         url: String,
         login: String,
-        senha: String,
-        loginPaciente: String,
-        onSuccess: (List<ResultadoExame>) -> Unit,
+        password: String,
+        userNonce: String,
+        onSuccess: (List<ExamResult>) -> Unit,
         onError: (String) -> Unit
     ) {
         val queue = Volley.newRequestQueue(context)
@@ -188,14 +188,14 @@ class MainActivity : ComponentActivity() {
                         return@Listener
                     }
 
-                    val resultados = doc.select("ul.linha-resultados-exames").map { elemento ->
-                        parseResultadoExame(elemento)
+                    val results = doc.select("ul.linha-resultados-exames").map { element ->
+                        parseExamResult(element)
                     }
 
-                    if (resultados.isEmpty()) {
+                    if (results.isEmpty()) {
                         onError("Nenhum exame encontrado para o usuário.")
                     } else {
-                        onSuccess(resultados)
+                        onSuccess(results)
                     }
                 } catch (e: Exception) {
                     onError("Erro ao processar a resposta: ${e.localizedMessage}")
@@ -211,28 +211,29 @@ class MainActivity : ComponentActivity() {
             override fun getParams(): Map<String, String> {
                 return mapOf(
                     "login" to login,
-                    "senha" to senha,
-                    "_wpnonce" to loginPaciente
+                    "senha" to password,
+                    "_wpnonce" to userNonce
                 )
             }
         }
 
         queue.add(stringRequest)
     }
+
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
         val navController = rememberNavController()
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
-                LoginScreen { user_login, user_pass, userData, resultados ->
+                LoginScreen { userLogin, userPassword, userData, results ->
                     val userDataJson = Uri.encode(Gson().toJson(userData))
-                    navController.navigate("user_data?userData=$userDataJson&login=$user_login&senha=$user_pass&resultados=${Uri.encode(Gson().toJson(resultados))}")
+                    navController.navigate("user_data?userData=$userDataJson&login=$userLogin&senha=$userPassword&resultados=${Uri.encode(Gson().toJson(results))}")
                 }
             }
             composable("user_data?userData={userData}&login={login}&senha={senha}&resultados={resultados}") { backStackEntry ->
                 val userDataJson = backStackEntry.arguments?.getString("userData")
-                val resultadosJson = backStackEntry.arguments?.getString("resultados")
+                val resultsJson = backStackEntry.arguments?.getString("resultados")
 
                 val userData: UserData? = try {
                     Gson().fromJson(userDataJson, UserData::class.java)
@@ -240,8 +241,8 @@ class MainActivity : ComponentActivity() {
                     null
                 }
 
-                val resultados: List<ResultadoExame> = try {
-                    Gson().fromJson(resultadosJson, Array<ResultadoExame>::class.java).toList()
+                val results: List<ExamResult> = try {
+                    Gson().fromJson(resultsJson, Array<ExamResult>::class.java).toList()
                 } catch (e: JsonSyntaxException) {
                     emptyList()
                 }
@@ -249,7 +250,7 @@ class MainActivity : ComponentActivity() {
                 if (userData != null) {
                     UserDataScreen(
                         userData = userData,
-                        resultados = resultados,
+                        results = results,
                         onLogout = {
                             navController.popBackStack()
                         }

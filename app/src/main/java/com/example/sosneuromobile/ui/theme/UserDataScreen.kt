@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
-fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogout: () -> Unit) {
+fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -> Unit) {
     val context = LocalContext.current
 
     Scaffold(topBar = {
@@ -44,6 +44,7 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
             }
         })
     }, content = { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -85,7 +86,7 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                 )
                 Text(
-                    text = "Data de Nascimento: ${userData.dataNasc}",
+                    text = "Data de Nascimento: ${userData.birthDate}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                 )
                 Text(
@@ -93,7 +94,7 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                 )
                 Text(
-                    text = "Telefone: ${userData.telefone}",
+                    text = "Telefone: ${userData.phone}",
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                 )
             }
@@ -104,7 +105,7 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                 )
             )
 
-            resultados.forEach { resultado ->
+            results.forEach { result ->
                 Column(
                     modifier = Modifier
                         .padding(16.dp)
@@ -113,25 +114,25 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                         .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = resultado.dataRealizacao,
+                        text = result.examDate,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Text(
-                        text = resultado.tipoExame,
+                        text = result.examType,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(onClick = { viewFile(context, resultado.linkBaixar) }) {
+                        IconButton(onClick = { viewFile(context, result.downloadLink) }) {
                             Icon(
                                 imageVector = Icons.Default.Visibility,
                                 contentDescription = "Visualizar Exame",
                                 tint = Color(0xFF1565C0)
                             )
                         }
-                        IconButton(onClick = { downloadFile(context, resultado.linkBaixar) }) {
+                        IconButton(onClick = { downloadFile(context, result.downloadLink) }) {
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Baixar Exame",
@@ -142,7 +143,7 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                 }
             }
 
-            if (resultados.isEmpty()) {
+            if (results.isEmpty()) {
                 Text(text = "Nenhum exame encontrado", color = Color.Gray)
             }
         }
@@ -171,5 +172,3 @@ fun downloadFile(context: Context, url: String?) {
         context.startActivity(browserIntent)
     }
 }
-
-
