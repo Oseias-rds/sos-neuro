@@ -35,6 +35,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
+import org.jsoup.nodes.Element
 
 class MainActivity : ComponentActivity() {
 
@@ -155,6 +156,12 @@ class MainActivity : ComponentActivity() {
         queue.add(stringRequest)
     }
 
+    fun parseResultadoExame(elemento: Element): ResultadoExame {
+        val dataRealizacao = elemento.select("li:eq(0) p").text().trim()
+        val tipoExame = elemento.select("li:eq(1) p").text().trim()
+        val linkBaixar = elemento.select("li:eq(2) a").attr("href").trim()
+        return ResultadoExame(dataRealizacao, tipoExame, linkBaixar)
+    }
 
     fun buscarResultados(
         context: Context,
@@ -182,10 +189,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     val resultados = doc.select("ul.linha-resultados-exames").map { elemento ->
-                        val dataRealizacao = elemento.select("li:eq(0) p").text()
-                        val tipoExame = elemento.select("li:eq(1) p").text()
-                        val linkBaixar = elemento.select("li:eq(2) a").attr("href")
-                        ResultadoExame(dataRealizacao, tipoExame, linkBaixar)
+                        parseResultadoExame(elemento)
                     }
 
                     if (resultados.isEmpty()) {
@@ -219,8 +223,6 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun AppNavigation() {
         val navController = rememberNavController()
-        val context = LocalContext.current
-
         NavHost(navController = navController, startDestination = "login") {
             composable("login") {
                 LoginScreen { user_login, user_pass, userData, resultados ->
@@ -230,8 +232,6 @@ class MainActivity : ComponentActivity() {
             }
             composable("user_data?userData={userData}&login={login}&senha={senha}&resultados={resultados}") { backStackEntry ->
                 val userDataJson = backStackEntry.arguments?.getString("userData")
-                val user_login = backStackEntry.arguments?.getString("login")
-                val user_pass = backStackEntry.arguments?.getString("senha")
                 val resultadosJson = backStackEntry.arguments?.getString("resultados")
 
                 val userData: UserData? = try {

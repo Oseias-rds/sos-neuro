@@ -98,12 +98,6 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                 )
             }
 
-            TextButton(onClick = { /* Implementar navegação para editar informações */ }) {
-                Text(text = "Editar informações", color = Color(0xFF1565C0), fontSize = 18.sp)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             Text(
                 text = "Seus resultados:", style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1565C0)
@@ -119,11 +113,11 @@ fun UserDataScreen(userData: UserData, resultados: List<ResultadoExame>, onLogou
                         .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Data de Realização: ${resultado.dataRealizacao}",
+                        text = resultado.dataRealizacao,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Text(
-                        text = "Tipo de Exame: ${resultado.tipoExame}",
+                        text = resultado.tipoExame,
                         style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp)
                     )
                     Row(
