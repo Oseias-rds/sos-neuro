@@ -1,5 +1,7 @@
 package com.example.sosneuromobile.ui.theme
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -19,8 +21,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.sosneuromobile.MainActivity
 import com.example.sosneuromobile.R
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(onLoginSuccess: (String, String, UserData) -> Unit) {
@@ -70,13 +70,12 @@ fun LoginScreen(onLoginSuccess: (String, String, UserData) -> Unit) {
 }
 
 @Composable
-fun LoginFields(onLoginSuccess: (String, String,UserData) -> Unit) {
+fun LoginFields(onLoginSuccess: (String, String, UserData) -> Unit) {
     val userLoginState = remember { mutableStateOf("") }
     val passwordState = remember { mutableStateOf("") }
     val loginErrorState = remember { mutableStateOf<String?>(null) }
 
     val context = LocalContext.current
-
 
     fun authenticate(user_login: String, user_pass: String) {
         val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
@@ -94,8 +93,20 @@ fun LoginFields(onLoginSuccess: (String, String,UserData) -> Unit) {
                         loginPaciente = wpnonce,
                         onSuccess = { usuarioValido, userData ->
                             if (usuarioValido) {
-                                onLoginSuccess(user_login, userData.toString(), userData)
-                            } else {
+                                context.buscarResultados(
+                                    context = context,
+                                    url = url,
+                                    login = user_login,
+                                    senha = user_pass,
+                                    loginPaciente = wpnonce,
+                                    onSuccess = { resultados ->
+                                        onLoginSuccess(user_login, user_pass, userData)
+                                    },
+                                    onError = { error ->
+                                        loginErrorState.value = error
+                                    }
+                                )
+                            }  else {
                                 loginErrorState.value = "Usuário inválido"
                             }
                         },
@@ -110,7 +121,6 @@ fun LoginFields(onLoginSuccess: (String, String,UserData) -> Unit) {
             )
         }
     }
-
 
     Column(
         modifier = Modifier

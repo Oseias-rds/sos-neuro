@@ -8,9 +8,16 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -174,7 +181,7 @@ class MainActivity : ComponentActivity() {
                         return@Listener
                     }
 
-                    val resultados = doc.select("ul#table-entrega-de-exames > li.table-row").map { elemento ->
+                    val resultados = doc.select("ul.linha-resultados-exames").map { elemento ->
                         val data = elemento.select("li:eq(0) p").text()
                         val tipoExame = elemento.select("li:eq(1) p").text()
                         val linkBaixar = elemento.select("li:eq(2) a").attr("href")
@@ -209,7 +216,6 @@ class MainActivity : ComponentActivity() {
         queue.add(stringRequest)
     }
 
-
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigation() {
@@ -223,7 +229,6 @@ class MainActivity : ComponentActivity() {
                     navController.navigate("user_data?userData=$userDataJson&login=$user_login&senha=$user_pass")
                 })
             }
-
             composable("user_data?userData={userData}&login={login}&senha={senha}") { backStackEntry ->
                 val userDataJson = backStackEntry.arguments?.getString("userData")
                 val user_login = backStackEntry.arguments?.getString("login")
@@ -239,7 +244,6 @@ class MainActivity : ComponentActivity() {
                 var loading by remember { mutableStateOf(true) }
                 var errorMessage by remember { mutableStateOf("") }
 
-                // Fetching results once userData is available
                 LaunchedEffect(userData, user_login, user_pass) {
                     if (userData != null && !user_login.isNullOrEmpty() && !user_pass.isNullOrEmpty()) {
                         val url = "https://sosneuro.com.br/index.php/entrega-de-exames"
@@ -268,6 +272,7 @@ class MainActivity : ComponentActivity() {
                     if (errorMessage.isNotEmpty()) {
                         Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
                     } else {
+                        CircularProgressIndicator()
                         Text("Carregando...", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else {
