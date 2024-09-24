@@ -77,5 +77,7 @@ dependencies {
     implementation (libs.converter.gson)
     implementation (libs.volley)
     implementation(libs.jsoup)
+    implementation (libs.material)
+
 
 }

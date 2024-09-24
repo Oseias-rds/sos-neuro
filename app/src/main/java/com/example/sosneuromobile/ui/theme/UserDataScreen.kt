@@ -18,12 +18,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 @Composable
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,10 +35,11 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
         }, colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color(0xFF1565C0), titleContentColor = Color.White
+            containerColor = MaterialTheme.colorScheme.primary, // Cor primária
+            titleContentColor = MaterialTheme.colorScheme.onPrimary // Cor do conteúdo na cor primária
         ), actions = {
             TextButton(onClick = onLogout) {
-                Text(text = "Encerrar sessão", color = Color.White)
+                Text(text = "Encerrar sessão", color = MaterialTheme.colorScheme.onPrimary)
             }
         })
     }, content = { padding ->
@@ -51,20 +50,23 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
                 .padding(padding)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
-                .background(Color(0xFFE3F2FD)),
+                .background(MaterialTheme.colorScheme.background), // Cor de fundo do tema
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
                 text = "Olá, ${userData.displayName.uppercase()}",
                 style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color(0xFF1565C0)
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    color = MaterialTheme.colorScheme.primary // Usando a cor primária do tema
                 )
             )
             Text(
                 text = "Bem-vindo a sua área restrita",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 18.sp, color = Color.DarkGray
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colorScheme.onBackground // Cor do texto padrão
                 )
             )
 
@@ -73,7 +75,9 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
             Text(
                 text = "Seus dados pessoais:",
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1565C0)
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
             )
 
@@ -100,8 +104,11 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
             }
 
             Text(
-                text = "Seus resultados:", style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color(0xFF1565C0)
+                text = "Seus resultados:",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
             )
 
@@ -110,8 +117,9 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
                     modifier = Modifier
                         .padding(16.dp)
                         .fillMaxWidth()
-                        .background(Color(0xFFBBDEFB), shape = MaterialTheme.shapes.medium)
-                        .padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally
+                        .background(MaterialTheme.colorScheme.surface, shape = MaterialTheme.shapes.medium) // Usando a cor de superfície
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = result.examDate,
@@ -129,14 +137,14 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
                             Icon(
                                 imageVector = Icons.Default.Visibility,
                                 contentDescription = "Visualizar Exame",
-                                tint = Color(0xFF1565C0)
+                                tint = MaterialTheme.colorScheme.primary // Usando a cor primária
                             )
                         }
                         IconButton(onClick = { downloadFile(context, result.downloadLink) }) {
                             Icon(
                                 imageVector = Icons.Default.Download,
                                 contentDescription = "Baixar Exame",
-                                tint = Color(0xFF1565C0)
+                                tint = MaterialTheme.colorScheme.primary // Usando a cor primária
                             )
                         }
                     }
@@ -144,7 +152,7 @@ fun UserDataScreen(userData: UserData, results: List<ExamResult>, onLogout: () -
             }
 
             if (results.isEmpty()) {
-                Text(text = "Nenhum exame encontrado", color = Color.Gray)
+                Text(text = "Nenhum exame encontrado", color = MaterialTheme.colorScheme.onSurface)
             }
         }
     })

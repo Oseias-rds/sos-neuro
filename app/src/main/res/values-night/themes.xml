@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Tema Claro -->
+    <!-- Tema Escuro -->
     <style name="Theme.SosNeuroMobile" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary colors -->
         <item name="colorPrimary">@color/colorPrimary</item>
@@ -15,6 +15,6 @@
 
         <!-- StatusBar e outros -->
         <item name="android:statusBarColor">@color/colorPrimaryVariant</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
